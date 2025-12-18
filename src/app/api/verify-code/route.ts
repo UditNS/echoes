@@ -1,0 +1,75 @@
+import dbConnect from '@/lib/dbConnect'
+import UserModel from '@/models/User'
+
+export async function POST (request : Request) {
+    await dbConnect()
+
+    try {
+        const {username, code} = await request.json()
+        const decodedUsername = decodeURIComponent(username) // this will decode the username from the URL (%20 == ' ')
+        const user = await UserModel.findOne({username: decodedUsername})
+
+        if(!user){
+            return Response.json (
+                {
+                success : false,
+                message : 'User not found'
+                },
+                {
+                    status: 500
+                }
+            )
+        }
+
+        const isCodeValid = user.verifyCode === code
+        const isCodeExpired = new Date(user.verifyCodeExpiry) > new Date();
+
+        if(isCodeValid && isCodeExpired){
+            user.isVerified = true;
+            await user.save()
+            return Response.json (
+                {
+                success : true,
+                message : 'Account verified successfully'
+                },
+                {
+                    status: 200
+                }
+            )
+        }
+        else if(!isCodeExpired){
+            return Response.json (
+                {
+                success : false,
+                message : 'Verification code is expired, please signup again to generate a new code'
+                },
+                {
+                    status: 500
+                }
+            )
+        }
+        else{
+            return Response.json (
+                {
+                success : false,
+                message : 'Verification code is incorrect'
+                },
+                {
+                    status: 500
+                }
+            )
+        }
+    }
+    catch(error){
+        console.log("Something went wrong while verifying the code : " + error)
+        return Response.json (
+            {
+            success : false,
+            message : 'Something went wrong while verifying the code'
+            },
+            {
+                status: 500
+            }
+        )
+    }
+}
