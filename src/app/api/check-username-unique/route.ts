@@ -11,9 +11,9 @@ export async function GET(request: Request){
     await dbConnect()
 
     try{
-        const { searchParams } = new URL(request.url) // this gives the full url
+        const { searchParams } = new URL(request.url) 
         const queryParam = {
-            username : searchParams.get('username') // i am fetching the username from the url.
+            username : searchParams.get('username') 
         }
         // validating the username
         const result = UsernameQuerySchema.safeParse(queryParam)// queryParam need to be an object
