@@ -1,13 +1,19 @@
+import { sendVerificationEmail } from "@/helpers/sendVerificationEmail";
 import dbConnect from "@/lib/dbConnect";
 import UserModel from "@/models/User";
 import bcrypt from 'bcrypt'
-import { sendVerficationEmail } from "@/helpers/sendVerficationEmail";
-
 
 export async function POST(request: Request){
     await dbConnect();
     try{
         const {username, email, password} = await request.json()
+        
+        if (!username || !email || !password) {
+            return Response.json(
+              { success: false, message: "Missing required fields" },
+              { status: 400 }
+            );
+          }
         // checking for existing username
         const existingUserVerifiedbyUserName = await UserModel.findOne({
             username,
@@ -17,7 +23,7 @@ export async function POST(request: Request){
             return Response.json({
                 success: false,
                 message: "Username is already taken"
-            }, {status: 500})
+            }, {status: 409})
         }
 
         // checking for email already registered in the database
@@ -58,7 +64,7 @@ export async function POST(request: Request){
             await newUser.save()
         }
         // send verification email
-        const emailResponse = await sendVerficationEmail(
+        const emailResponse = await sendVerificationEmail(
             email, 
             username, 
             verifyCode
